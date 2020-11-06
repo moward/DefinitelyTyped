@@ -692,24 +692,30 @@ declare namespace jest {
         getState(): MatcherState & Record<string, any>;
     }
 
-    type JestMatchers<T> = JestMatchersShape<T>;
+    type FulfilledType<T extends {}> = T extends PromiseLike<infer U> ? U : T;
 
+    type JestMatchers<T> = JestMatchersShape<
+        Matchers<void, T>,
+        Matchers<Promise<void>, FulfilledType<T>>,
+        Matchers<Promise<void>, any>
+    >;
 
-    type JestMatchersShape<T extends {} = {}> = AndNot<Matchers<Promise<void>, T> & (T extends PromiseLike<infer TValue> ? JestMatchersPromiseShape<TValue> : {})>;
-
-    type JestMatchersPromiseShape<TValue extends {} = {}> = {
+    type JestMatchersShape<
+        TNonPromise extends {} = {},
+        TPromiseFulfilled extends {} = {},
+        TPromiseRejected extends {} = {}
+    > = {
         /**
          * Use resolves to unwrap the value of a fulfilled promise so any other
          * matcher can be chained. If the promise is rejected the assertion fails.
          */
-        resolves: Matchers<TValue>;
+        resolves: AndNot<TPromiseFulfilled>;
         /**
          * Unwraps the reason of a rejected promise so any other matcher can be chained.
          * If the promise is fulfilled the assertion fails.
          */
-        rejects: Matchers<any>;
-    };
-
+        rejects: AndNot<TPromiseRejected>;
+    } & AndNot<TNonPromise>;
     type AndNot<T> = T & {
         not: T
     };
@@ -843,7 +849,7 @@ declare namespace jest {
          * This is particularly useful for ensuring expected objects have the right structure.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        toContain<E extends (T extends Array<infer T> ? T : never)>(expected: E): R;
+        toContain<E extends (T extends Array<infer T> ? T : T extends string ? string : never)>(expected: E): R;
         /**
          * Used when you want to check that an item is in a list.
          * For testing the items in the list, this matcher recursively checks the
@@ -1070,8 +1076,16 @@ declare namespace jest {
     // should be TMatcherReturn extends void|Promise<void> but getting dtslint error
     // Use the `void` type for return types only. Otherwise, use `undefined`. See: https://github.com/Microsoft/dtslint/blob/master/docs/void-return.md
     // have added issue https://github.com/microsoft/dtslint/issues/256 - Cannot have type union containing void ( to be used as return type only
-    type ExtendedMatchers<TMatchers extends ExpectExtendMap, TMatcherReturn, TActual> = Matchers<TMatcherReturn, TActual> & {[K in keyof TMatchers]: CustomJestMatcher<TMatchers[K], TMatcherReturn>};
-    type JestExtendedMatchers<TMatchers extends ExpectExtendMap, TActual> = JestMatchersShape<ExtendedMatchers<TMatchers, void, TActual>, ExtendedMatchers<TMatchers, Promise<void>, TActual>>;
+    type ExtendedMatchers<TMatchers extends ExpectExtendMap, TMatcherReturn, TActual> = Matchers<
+        TMatcherReturn,
+        TActual
+    > &
+        { [K in keyof TMatchers]: CustomJestMatcher<TMatchers[K], TMatcherReturn> };
+    type JestExtendedMatchers<TMatchers extends ExpectExtendMap, TActual> = JestMatchersShape<
+        ExtendedMatchers<TMatchers, void, TActual>,
+        ExtendedMatchers<TMatchers, Promise<void>, FulfilledType<TActual>>,
+        ExtendedMatchers<TMatchers, Promise<void>, any>
+    >;
 
     // when have called expect.extend
     type ExtendedExpectFunction<TMatchers extends ExpectExtendMap> = <TActual>(actual: TActual) => JestExtendedMatchers<TMatchers, TActual>;

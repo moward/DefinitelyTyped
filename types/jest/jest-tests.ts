@@ -834,8 +834,6 @@ describe('', () => {
         // $ExpectError
         expect('').not.not;
         // $ExpectError
-        expect('').resolves;
-        // $ExpectError
         expect('').resolves.resolves;
         // $ExpectType void
         expect('').toEqual('');
@@ -905,11 +903,15 @@ describe('', () => {
         expect(NaN).toBeNaN();
         expect(Infinity).toBeNaN();
 
+        expect([{}]).toContain({});
+        // $ExpectError
         expect([]).toContain({});
         expect(['abc']).toContain('abc');
         expect(['abc']).toContain('def');
         expect('abc').toContain('bc');
 
+        expect([{}]).toContainEqual({});
+        // $ExpectError
         expect([]).toContainEqual({});
         expect(['abc']).toContainEqual('def');
 
@@ -1122,12 +1124,12 @@ describe('', () => {
         // $ExpectError
         nonPromiseMatchers.toMatchInlineSnapshot({notthing: extendedExpect.any(Boolean)});
 
-        let promiseMatchers: jest.PromiseMatchers<typeof matchers> = matchers.rejects;
-        if (isNot) {
-            promiseMatchers = matchers.rejects.not;
-        }
+        const promiseMatchers = matchers.rejects;
+
+        const promiseMatchers2 = matchers.rejects.not;
+
         // $ExpectType Promise<void>
-        promiseMatchers.customMatcher({prop: ''}, true);
+        promiseMatchers2.customMatcher({prop: ''}, true);
 
         // retains built in asymmetric matcher
         extendedExpect.not.arrayContaining;
