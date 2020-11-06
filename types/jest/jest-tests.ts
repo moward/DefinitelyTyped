@@ -834,6 +834,8 @@ describe('', () => {
         // $ExpectError
         expect('').not.not;
         // $ExpectError
+        expect('').resolves;
+        // $ExpectError
         expect('').resolves.resolves;
         // $ExpectType void
         expect('').toEqual('');
