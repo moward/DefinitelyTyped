@@ -722,6 +722,8 @@ declare namespace jest {
 
     type JasmineMatchersFor<T> = jasmine.Any | (T extends any[] ? jasmine.ArrayContaining : T extends {} ? jasmine.ObjectContaining : never);
 
+    type FunctionOrSpy<TArgs extends any[] = any[], TReturn extends any = any> = (...args: TArgs) => TReturn | SpyInstance<(...args: TArgs) => TReturn>;
+
     // should be R extends void|Promise<void> but getting dtslint error
     interface Matchers<R, T = {}> {
         /**
@@ -731,7 +733,7 @@ declare namespace jest {
          * Note that the type must be either an array or a tuple.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        lastCalledWith<E extends (T extends (...args: infer T) => any ? T : never)>(...args: E): R;
+        lastCalledWith<E extends (T extends FunctionOrSpy<infer T> ? T : never)>(...args: E): R;
         /**
          * Ensure that the last call to a mock function has returned a specified value.
          *
@@ -739,7 +741,7 @@ declare namespace jest {
          * This is particularly useful for ensuring expected objects have the right structure.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        lastReturnedWith<E extends (T extends (...args: any[]) => infer T ? T : never)>(value: E): R;
+        lastReturnedWith<E extends (T extends FunctionOrSpy<infer T> ? T : never)>(value: E): R;
         /**
          * Ensure that a mock function is called with specific arguments on an Nth call.
          *
@@ -747,7 +749,7 @@ declare namespace jest {
          * Note that the type must be either an array or a tuple.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        nthCalledWith<E extends (T extends (...args: infer T) => any ? T : never)>(nthCall: number, ...params: E): R;
+        nthCalledWith<E extends (T extends FunctionOrSpy<infer T> ? T : never)>(nthCall: number, ...params: E): R;
         /**
          * Ensure that the nth call to a mock function has returned a specified value.
          *
@@ -755,7 +757,7 @@ declare namespace jest {
          * This is particularly useful for ensuring expected objects have the right structure.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        nthReturnedWith<E extends (T extends (...args: any[]) => infer T ? T : never)>(n: number, value: E): R;
+        nthReturnedWith<E extends (T extends FunctionOrSpy<any[], infer T> ? T : never)>(n: number, value: E): R;
         /**
          * Checks that a value is what you expect. It uses `Object.is` to check strict equality.
          * Don't use `toBe` with floating-point numbers.
@@ -768,11 +770,11 @@ declare namespace jest {
         /**
          * Ensures that a mock function is called.
          */
-        toBeCalled: T extends (...args: any[]) => any ? () => R : never;
+        toBeCalled: T extends (...args: any[]) => any ? () => R : T extends SpyInstance ? () => R : never;
         /**
          * Ensures that a mock function is called an exact number of times.
          */
-        toBeCalledTimes: T extends (...args: any[]) => any ? (expected: number) => R : never;
+        toBeCalledTimes: T extends (...args: any[]) => any ? (expected: number) => R : T extends SpyInstance ? (expected: number) => R : never;
         /**
          * Ensure that a mock function is called with specific arguments.
          *
@@ -780,7 +782,7 @@ declare namespace jest {
          * Note that the type must be either an array or a tuple.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        toBeCalledWith<E extends (T extends (...args: infer T) => any ? T : never)>(...args: E): R;
+        toBeCalledWith<E extends (T extends FunctionOrSpy<infer T> ? T : never)>(...args: E): R;
         /**
          * Using exact equality with floating point numbers is a bad idea.
          * Rounding means that intuitive things fail.
